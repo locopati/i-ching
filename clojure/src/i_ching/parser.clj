@@ -1,6 +1,6 @@
 (ns i-ching.parser)
 (require '[clojure.core.match])
-(use '[clojure.string :only (trim)])
+(use '[clojure.string :only (trim upper-case includes?)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
 (def TRIGRAMS
@@ -32,29 +32,35 @@
    (verse-commentary-handler section-symbol next-section-symbol false))
   ([section-symbol next-section-symbol terminate?]
    (fn [match hexagram]
-    (cond
+     (cond
       (= match "")
       (vector section-symbol hexagram)
+
+      (includes? match ".html#index")
+      (vector :do-nothing nil)
 
       (= (trim match) (upper-case (str "THE " (name next-section-symbol))))
       (if terminate?
         (vector :do-nothing nil)
         (vector next-section-symbol hexagram))
 
-      (and (nil? (get-in hexagram [section-symbol :commentary]))
-           (re-find #"^\s+" match))
+      (or
+       (re-find #"^\s+.*(Six|Nine).*(beginning|second|third|fourth|fifth|top)" match)
+       (and (nil? (get-in hexagram (verse-commentary-lookup section-symbol :commentary hexagram)))
+            (re-find #"^\s+" match)))
       (vector section-symbol
-              (update-in hexagram
-                         [section-symbol :verse]
-                         (fn [old new] (str old new))
-                         (str (trim match) "\n")))
+                (update-in hexagram
+                           (verse-commentary-lookup section-symbol :verse hexagram)
+                           (fn [old new] (str old new))
+                           (str (trim match) "\n")))
 
-      :else (vector section-symbol
-                    (update-in hexagram
-                               [section-symbol :commentary]
-                               (fn [old new] (str old new))
-                               (str (trim match) " ")))))))
-    
+      :else
+      (vector section-symbol
+                (update-in hexagram
+                           (verse-commentary-lookup section-symbol :commentary hexagram)
+                           (fn [old new] (str old new))
+                           (str (trim match) " ")))))))
+
 ;; define the state transitions for parsing i-ching.html
 ;; each transition is a regex for testing the current line of text
 ;; and a handler for how to respond to a match or failure to match
@@ -71,7 +77,8 @@
                                                    {:king-wen-number (Integer. (match 1))
                                                     :hexagram (HEXAGRAMS (Integer. (match 1)))
                                                     :pinyin-name (match 2)
-                                                    :english-name (match 3)})
+                                                    :english-name (match 3)
+                                                    :lines []})
                                                   (vector :trigram hexagram)))}
    :trigram {:regex #"\s+(?:above|below).*,\s(.*)"
              :handler (fn [match hexagram] (if match
@@ -99,10 +106,9 @@
               :handler (verse-commentary-handler :judgment :image)}
 
    :image {:regex #".*"
-           :handler (verse-commentary-handler :image :lines true)}
-   :end-hexagram {:regex #"<a href=\"http://www.akirarabelais.com/i/i.html#index\">index</a>"
-                  :handler (fn [match hexagram] (vector :new-hexagram nil))}
-
+           :handler (verse-commentary-handler :image :lines)}
+   :lines {:regex #".*"
+           :handler (verse-commentary-handler :lines :lines)}
    })                   
 
 ;; return an ordered seq (by hexgram number) of maps with info for each hexagram

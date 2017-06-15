@@ -1,5 +1,5 @@
 (ns i-ching.parser)
-(require '[clojure.core.match])
+(use '[cheshire.core :only (generate-stream)])
 (use '[clojure.string :only (trim upper-case includes?)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
@@ -26,6 +26,23 @@
    41 "䷨" 42 "䷩" 43 "䷪" 44 "䷫" 45 "䷬" 46 "䷭" 47 "䷮" 48 "䷯" 
    49 "䷰" 50 "䷱" 51 "䷲" 52 "䷳" 53 "䷴" 54 "䷵" 55 "䷶" 56 "䷷" 
    57 "䷸" 58 "䷹" 59 "䷺" 60 "䷻" 61 "䷼" 62 "䷽" 63 "䷾" 64 "䷿"})
+
+(defn verse-commentary-lookup [section-symbol verse-or-commentary hexagram]
+  (cond
+    (and (= section-symbol :lines)
+         (= 0 (count (:lines hexagram))))
+    (vector :lines 0 verse-or-commentary)
+    
+    (and (= section-symbol :lines)
+         (= verse-or-commentary :verse)
+         (not (nil? (:commentary (last (:lines hexagram))))))
+    (vector :lines (count (:lines hexagram)) verse-or-commentary)
+
+    (= section-symbol :lines)
+    (vector :lines (dec (count (:lines hexagram))) verse-or-commentary)
+
+    :else
+    (vector section-symbol verse-or-commentary)))
 
 (defn verse-commentary-handler
   ([section-symbol next-section-symbol]
@@ -62,11 +79,12 @@
                            (str (trim match) " ")))))))
 
 ;; define the state transitions for parsing i-ching.html
+
 ;; each transition is a regex for testing the current line of text
 ;; and a handler for how to respond to a match or failure to match
 ;; the handler returns the new state and new hexagram
 (def PRETTY-STATE-MACHINE
-  {:do-nothing {:regex #"^((?!name=\"1\").)*$"
+  {:do-nothing {:regex #"^((?!name=\"\d{1,2}\").)*$"
                 :handler (fn [match hexagram] (if match
                                                  (vector :do-nothing hexagram)
                                                  (vector :new-hexagram nil)))}
@@ -138,12 +156,5 @@
           (swap! hexagrams assoc (:king-wen-number new-hexagram) new-hexagram)))
       (vals (dissoc @hexagrams nil)))))
 
-
-
-
-
-
-
-
-
-
+(defn emit-json []
+  (generate-stream (parse-wilhelm) (clojure.java.io/writer "resources/i-ching.json")))

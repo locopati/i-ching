@@ -1,18 +1,22 @@
 (ns i-ching.parser)
 (require '[clojure.core.match])
+(use '[clojure.string :only (trim)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
 (def TRIGRAMS
   {"HEAVEN" [1 1 1],
    "EARTH" [0 0 0],
    "WATER" [0 1 0],
-   "FLAME" [1 0 1],
+   "FLAME" [1 0 1], ;; both FLAME and FIRE are used interchangably
+   "FIRE" [1 0 1],
    "THUNDER" [1 0 0],
    "MOUNTAIN" [0 0 1],
    "LAKE" [1 1 0],
-   "WIND" [0 1 1]
+   "WIND" [0 1 1], ;; both WIND and WOOD are used interchangably
+   "WOOD" [0 1 1]
    })
 
+;; used for looking up the unicode hexgram character
 (def HEXAGRAMS
   {1 "䷀" 2 "䷁" 3 "䷂" 4 "䷃" 5 "䷄" 6 "䷅" 7 "䷆" 8 "䷇" 
    9 "䷈" 10 "䷉" 11 "䷊" 12 "䷋" 13 "䷌" 14 "䷍" 15 "䷎" 16 "䷏" 
@@ -23,42 +27,95 @@
    49 "䷰" 50 "䷱" 51 "䷲" 52 "䷳" 53 "䷴" 54 "䷵" 55 "䷶" 56 "䷷" 
    57 "䷸" 58 "䷹" 59 "䷺" 60 "䷻" 61 "䷼" 62 "䷽" 63 "䷾" 64 "䷿"})
 
-  ;; define the state transitions for parsing i-ching.html
-  ;; each transition is a regex for testing the current line of text
-  ;; and a handler for how to respond to a match or failure to match
-  (def PRETTY-STATE-MACHINE
-    {:do-nothing {:regex #"^((?!name=\"1\").)*$"
+(defn verse-commentary-handler
+  ([section-symbol next-section-symbol]
+   (verse-commentary-handler section-symbol next-section-symbol false))
+  ([section-symbol next-section-symbol terminate?]
+   (fn [match hexagram]
+    (cond
+      (= match "")
+      (vector section-symbol hexagram)
+
+      (= (trim match) (upper-case (str "THE " (name next-section-symbol))))
+      (if terminate?
+        (vector :do-nothing nil)
+        (vector next-section-symbol hexagram))
+
+      (and (nil? (get-in hexagram [section-symbol :commentary]))
+           (re-find #"^\s+" match))
+      (vector section-symbol
+              (update-in hexagram
+                         [section-symbol :verse]
+                         (fn [old new] (str old new))
+                         (str (trim match) "\n")))
+
+      :else (vector section-symbol
+                    (update-in hexagram
+                               [section-symbol :commentary]
+                               (fn [old new] (str old new))
+                               (str (trim match) " ")))))))
+    
+;; define the state transitions for parsing i-ching.html
+;; each transition is a regex for testing the current line of text
+;; and a handler for how to respond to a match or failure to match
+;; the handler returns the new state and new hexagram
+(def PRETTY-STATE-MACHINE
+  {:do-nothing {:regex #"^((?!name=\"1\").)*$"
+                :handler (fn [match hexagram] (if match
+                                                 (vector :do-nothing hexagram)
+                                                 (vector :new-hexagram nil)))}
+   :new-hexagram {:regex #"^\s+(\d{1,2})\.\s(.*)\s/\s(.*)"
                   :handler (fn [match hexagram] (if match
-                                                  (vector :do-nothing hexagram)
-                                                  (vector :new-hexagram nil)))}
-     :new-hexagram {:regex #"^\s+(\d{1,2})\.\s(.*)\s/\s(.*)"
-                    :handler (fn [match hexagram] (if match
-                                                    (vector 
-                                                     :new-hexagram
-                                                     {:king-wen-number (Integer. (match 1))
-                                                      :hexagram (HEXAGRAMS (Integer. (match 1)))
-                                                      :pinyin-name (match 2)
-                                                      :english-name (match 3)})
-                                                    (vector :trigram hexagram)))}
-     :trigram {:regex #"\s+(?:above|below).*,\s(.*)"
-               :handler (fn [match hexagram] (println match hexagram) (if match
-                                                  (vector
-                                                   :trigram
-                                                   (merge
-                                                    hexagram
-                                                    {:hexagram-binary
-                                                     (apply
-                                                      (fnil conj [])
-                                                      (:hexagram-binary hexagram) (TRIGRAMS (match 1)))}))
-                                                  (vector :do-nothing nil)))}
-     })
+                                                  (vector 
+                                                   :new-hexagram
+                                                   {:king-wen-number (Integer. (match 1))
+                                                    :hexagram (HEXAGRAMS (Integer. (match 1)))
+                                                    :pinyin-name (match 2)
+                                                    :english-name (match 3)})
+                                                  (vector :trigram hexagram)))}
+   :trigram {:regex #"\s+(?:above|below).*,\s(.*)"
+             :handler (fn [match hexagram] (if match
+                                             (vector
+                                              :trigram
+                                              (merge
+                                               hexagram
+                                               {:hexagram-binary
+                                                ;; for trigram lookup it is necessary to trim
+                                                ;; a line may have extra space at the end 
+                                                (into [] (concat (TRIGRAMS (trim (match 1)))
+                                                                 (:hexagram-binary hexagram)))}))
+                                             (vector :description hexagram)))}
+   :description {:regex #".*"
+                 :handler (fn [match hexagram] (case (trim match)
+                                                 "" (vector :description hexagram)
+                                                 "THE JUDGMENT" (vector :judgment hexagram)
+                                                 (vector :description
+                                                         (merge hexagram
+                                                                {:description
+                                                                 (str (:description hexagram)
+                                                                      (trim match)
+                                                                      " ")}))))}
+   :judgment {:regex #".*"
+              :handler (verse-commentary-handler :judgment :image)}
 
+   :image {:regex #".*"
+           :handler (verse-commentary-handler :image :lines true)}
+   :end-hexagram {:regex #"<a href=\"http://www.akirarabelais.com/i/i.html#index\">index</a>"
+                  :handler (fn [match hexagram] (vector :new-hexagram nil))}
 
-;; produce a seq of hexagram maps
-;; keys...
-;; king-wen-number
-;; pinyin-name
-;; english-name
+   })                   
+
+;; return an ordered seq (by hexgram number) of maps with info for each hexagram
+;; map keys...
+;; king-wen-number (integer)
+;; hexagram (string)
+;; hexagram-binary (array of 6 1s or 0s)
+;; pinyin-name (string)
+;; english-name (string)
+;; description (string)
+;; judgment - map of verse (string) and commentary (string)
+;; image - map of verse (string) and commentary (string)
+;; lines - array of maps of verse (string) and commentary (string)
 (defn parse-wilhelm []
   (with-open [rdr (clojure.java.io/reader "resources/i-ching.html")]
     (let [hexagrams (atom (sorted-map))
@@ -69,8 +126,8 @@
               sm (@state PRETTY-STATE-MACHINE)
               m (re-matches (:regex sm) line)
               ;;_ (println "match" m) ;; for debugging
-              [s new-hexagram] ((:handler sm) m @current-hexagram)]
-          (reset! state s)
+              [new-state new-hexagram] ((:handler sm) m @current-hexagram)]
+          (reset! state new-state)
           (reset! current-hexagram new-hexagram)
           (swap! hexagrams assoc (:king-wen-number new-hexagram) new-hexagram)))
       (vals (dissoc @hexagrams nil)))))

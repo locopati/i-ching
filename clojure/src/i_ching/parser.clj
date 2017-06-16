@@ -84,7 +84,7 @@
 ;; and a handler for how to respond to a match or failure to match
 ;; the handler returns the new state and new hexagram
 (def PRETTY-STATE-MACHINE
-  {:do-nothing {:regex #"^((?!name=\"1\").)*$"
+  {:do-nothing {:regex #"^((?!name=\"\d{1,2}\").)*$"
                 :handler (fn [match hexagram] (if match
                                                  (vector :do-nothing hexagram)
                                                  (vector :new-hexagram nil)))}

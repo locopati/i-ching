@@ -1,6 +1,6 @@
 (ns i-ching.parser)
-(use '[cheshire.core :only (generate-stream generate-string)])
-(use '[clojure.string :only (trim upper-case includes? replace)])
+(use '[cheshire.core :only (generate-stream)])
+(use '[clojure.string :only (trim upper-case includes?)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
 (def TRIGRAMS
@@ -27,6 +27,9 @@
    49 "䷰" 50 "䷱" 51 "䷲" 52 "䷳" 53 "䷴" 54 "䷵" 55 "䷶" 56 "䷷" 
    57 "䷸" 58 "䷹" 59 "䷺" 60 "䷻" 61 "䷼" 62 "䷽" 63 "䷾" 64 "䷿"})
 
+;; isolates the lookup logic used by get-in/update-in in the verse-commentary-handler
+;; for judgment and image, this is straightforward because each is a map of verse and commentary
+;; for lines, this is complicated by it being an array of maps of verse and commentary
 (defn verse-commentary-lookup [section-symbol verse-or-commentary hexagram]
   (cond
     (and (= section-symbol :lines)
@@ -44,10 +47,12 @@
     :else
     (vector section-symbol verse-or-commentary)))
 
+;; the judgment, image, and lines sections all have a similar pattern - verse then commentary
+;; the lines section is more complicated because that pattern repeats six times, once for each line
+;; so in addition to jumping out of the pattern using the next header, for lines, 
+;; we also need to jump back into the pattern when we finish a commentary block
 (defn verse-commentary-handler
   ([section-symbol next-section-symbol]
-   (verse-commentary-handler section-symbol next-section-symbol false))
-  ([section-symbol next-section-symbol terminate?]
    (fn [match hexagram]
      (cond
       (= match "")
@@ -57,9 +62,7 @@
       (vector :do-nothing nil)
 
       (= (trim match) (upper-case (str "THE " (name next-section-symbol))))
-      (if terminate?
-        (vector :do-nothing nil)
-        (vector next-section-symbol hexagram))
+      (vector next-section-symbol hexagram)
 
       (or
        (re-find #"^\s+.*(?:Six|Nine).*(?:beginning|second|third|fourth|fifth|top)" match)
@@ -79,7 +82,6 @@
                            (str (trim match) " ")))))))
 
 ;; define the state transitions for parsing i-ching.html
-
 ;; each transition is a regex for testing the current line of text
 ;; and a handler for how to respond to a match or failure to match
 ;; the handler returns the new state and new hexagram
@@ -155,5 +157,6 @@
           (swap! hexagrams assoc (:king-wen-number new-hexagram) new-hexagram)))
       (vals (dissoc @hexagrams nil)))))
 
+;; convenience method to output our map of hexgram info to JSON
 (defn emit-json-file []
   (generate-stream (parse-wilhelm) (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")))

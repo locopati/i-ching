@@ -1,6 +1,6 @@
 (ns i-ching.parser)
 (use '[cheshire.core :only (generate-stream)])
-(use '[clojure.string :only (trim upper-case includes?)])
+(use '[clojure.string :only (trim upper-case includes? replace)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
 (def TRIGRAMS
@@ -145,6 +145,9 @@
     (let [hexagrams (atom (sorted-map))
           state (atom :do-nothing)
           current-hexagram (atom {})]
+      ;;(doseq [line (replace (line-seq rdr) ;; replace hex values with their character
+        ;;                    #"<([0-9A-F][0-9A-F])>"
+      ;;                  #(str (char (read-string (str "0x" (%1 1))))))]
       (doseq [line (line-seq rdr)]
         (let [;;_ (println "state" @state) ;; for debugging
               sm (@state PRETTY-STATE-MACHINE)

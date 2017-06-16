@@ -1,5 +1,5 @@
 (ns i-ching.parser)
-(use '[cheshire.core :only (generate-stream)])
+(use '[cheshire.core :only (generate-stream generate-string)])
 (use '[clojure.string :only (trim upper-case includes? replace)])
 
 ;; used for translating trigram names to sequences of yang (1) and yin (0)
@@ -62,7 +62,7 @@
         (vector next-section-symbol hexagram))
 
       (or
-       (re-find #"^\s+.*(Six|Nine).*(beginning|second|third|fourth|fifth|top)" match)
+       (re-find #"^\s+.*(?:Six|Nine).*(?:beginning|second|third|fourth|fifth|top)" match)
        (and (nil? (get-in hexagram (verse-commentary-lookup section-symbol :commentary hexagram)))
             (re-find #"^\s+" match)))
       (vector section-symbol
@@ -84,7 +84,7 @@
 ;; and a handler for how to respond to a match or failure to match
 ;; the handler returns the new state and new hexagram
 (def PRETTY-STATE-MACHINE
-  {:do-nothing {:regex #"^((?!name=\"\d{1,2}\").)*$"
+  {:do-nothing {:regex #"^((?!name=\"1\").)*$"
                 :handler (fn [match hexagram] (if match
                                                  (vector :do-nothing hexagram)
                                                  (vector :new-hexagram nil)))}
@@ -141,23 +141,19 @@
 ;; image - map of verse (string) and commentary (string)
 ;; lines - array of maps of verse (string) and commentary (string)
 (defn parse-wilhelm []
-  (with-open [rdr (clojure.java.io/reader "resources/i-ching.html")]
+  ;; note the encoding required to make the output of accented characters and line dots work
+  (with-open [rdr (clojure.java.io/reader "resources/i-ching.html" :encoding "windows-1252")]
     (let [hexagrams (atom (sorted-map))
           state (atom :do-nothing)
           current-hexagram (atom {})]
-      ;;(doseq [line (replace (line-seq rdr) ;; replace hex values with their character
-        ;;                    #"<([0-9A-F][0-9A-F])>"
-      ;;                  #(str (char (read-string (str "0x" (%1 1))))))]
       (doseq [line (line-seq rdr)]
-        (let [;;_ (println "state" @state) ;; for debugging
-              sm (@state PRETTY-STATE-MACHINE)
-              m (re-matches (:regex sm) line)
-              ;;_ (println "match" m) ;; for debugging
-              [new-state new-hexagram] ((:handler sm) m @current-hexagram)]
+        (let [state-machine (@state PRETTY-STATE-MACHINE)
+              line-match (re-matches (:regex state-machine) line)
+              [new-state new-hexagram] ((:handler state-machine) line-match @current-hexagram)]
           (reset! state new-state)
           (reset! current-hexagram new-hexagram)
           (swap! hexagrams assoc (:king-wen-number new-hexagram) new-hexagram)))
       (vals (dissoc @hexagrams nil)))))
 
-(defn emit-json []
-  (generate-stream (parse-wilhelm) (clojure.java.io/writer "resources/i-ching.json")))
+(defn emit-json-file []
+  (generate-stream (parse-wilhelm) (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")))

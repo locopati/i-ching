@@ -34,18 +34,18 @@
   (cond
     (and (= section-symbol :lines)
          (= 0 (count (:lines hexagram))))
-    (vector :lines 0 verse-or-commentary)
+    [:lines 0 verse-or-commentary]
     
     (and (= section-symbol :lines)
          (= verse-or-commentary :verse)
          (not (nil? (:commentary (last (:lines hexagram))))))
-    (vector :lines (count (:lines hexagram)) verse-or-commentary)
+    [:lines (count (:lines hexagram)) verse-or-commentary]
 
     (= section-symbol :lines)
-    (vector :lines (dec (count (:lines hexagram))) verse-or-commentary)
+    [:lines (dec (count (:lines hexagram))) verse-or-commentary]
 
     :else
-    (vector section-symbol verse-or-commentary)))
+    [section-symbol verse-or-commentary]))
 
 ;; the judgment, image, and lines sections all have a similar pattern - verse then commentary
 ;; the lines section is more complicated because that pattern repeats six times, once for each line
@@ -56,30 +56,30 @@
    (fn [match hexagram]
      (cond
       (= match "")
-      (vector section-symbol hexagram)
+      [vector section-symbol hexagram]
 
       (includes? match ".html#index")
-      (vector :do-nothing nil)
+      [vector :do-nothing nil]
 
       (= (trim match) (upper-case (str "THE " (name next-section-symbol))))
-      (vector next-section-symbol hexagram)
+      [next-section-symbol hexagram]
 
       (or
        (re-find #"^\s+.*(?:Six|Nine).*(?:beginning|second|third|fourth|fifth|top)" match)
        (and (nil? (get-in hexagram (verse-commentary-lookup section-symbol :commentary hexagram)))
             (re-find #"^\s+" match)))
-      (vector section-symbol
-                (update-in hexagram
-                           (verse-commentary-lookup section-symbol :verse hexagram)
-                           (fn [old new] (str old new))
-                           (str (trim match) "\n")))
+      [section-symbol
+       (update-in hexagram
+                  (verse-commentary-lookup section-symbol :verse hexagram)
+                  (fn [old new] (str old new))
+                  (str (trim match) "\n"))]
 
       :else
-      (vector section-symbol
-                (update-in hexagram
-                           (verse-commentary-lookup section-symbol :commentary hexagram)
-                           (fn [old new] (str old new))
-                           (str (trim match) " ")))))))
+      [section-symbol
+       (update-in hexagram
+                  (verse-commentary-lookup section-symbol :commentary hexagram)
+                  (fn [old new] (str old new))
+                  (str (trim match) " "))]))))
 
 ;; define the state transitions for parsing i-ching.html
 ;; each transition is a regex for testing the current line of text
@@ -164,4 +164,5 @@
 
 ;; convenience method to output our map of hexgram info to JSON
 (defn emit-json-file []
-  (generate-stream (wilhelm-results) (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")))
+  (with-open [wrt (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")]
+    (generate-stream (wilhelm-results) wrt)))

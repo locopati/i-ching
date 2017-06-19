@@ -131,7 +131,8 @@
            :handler (verse-commentary-handler :lines :lines)}
    })                   
 
-;; return an ordered seq (by hexgram number) of maps with info for each hexagram
+;; parse the Wilhelm HTML file
+;; returns an accumulator object
 ;; map keys...
 ;; king-wen-number (integer)
 ;; hexagram (string)
@@ -143,20 +144,24 @@
 ;; image - map of verse (string) and commentary (string)
 ;; lines - array of maps of verse (string) and commentary (string)
 (defn parse-wilhelm []
-  ;; note the encoding required to make the output of accented characters and line dots work
   (with-open [rdr (clojure.java.io/reader "resources/i-ching.html" :encoding "windows-1252")]
-    (let [hexagrams (atom (sorted-map))
-          state (atom :do-nothing)
-          current-hexagram (atom {})]
-      (doseq [line (line-seq rdr)]
-        (let [state-machine (@state PRETTY-STATE-MACHINE)
-              line-match (re-matches (:regex state-machine) line)
-              [new-state new-hexagram] ((:handler state-machine) line-match @current-hexagram)]
-          (reset! state new-state)
-          (reset! current-hexagram new-hexagram)
-          (swap! hexagrams assoc (:king-wen-number new-hexagram) new-hexagram)))
-      (vals (dissoc @hexagrams nil)))))
+    (reduce (fn [acc line]
+              (let [{:keys [state hexagrams current-hexagram]} acc
+                    state-machine (state PRETTY-STATE-MACHINE)
+                    line-match (re-matches (:regex state-machine) line)
+                    [new-state new-hexagram] ((:handler state-machine) line-match current-hexagram)]
+                {:state new-state
+                 :current-hexagram new-hexagram
+                 :hexagrams (assoc hexagrams (:king-wen-number new-hexagram) new-hexagram)}))
+            {:state :do-nothing
+             :current-hexagram {}
+             :hexagrams (sorted-map)}
+            (line-seq rdr))))
+
+;; extract the results from the Wilhelm parsing accumulator
+(defn wilhelm-results []
+  (vals (dissoc (:hexagrams (parse-wilhelm)) nil)))
 
 ;; convenience method to output our map of hexgram info to JSON
 (defn emit-json-file []
-  (generate-stream (parse-wilhelm) (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")))
+  (generate-stream (wilhelm-results) (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")))

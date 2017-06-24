@@ -56,10 +56,10 @@
    (fn [match hexagram]
      (cond
       (= match "")
-      [vector section-symbol hexagram]
+      [section-symbol hexagram]
 
       (includes? match ".html#index")
-      [vector :do-nothing nil]
+      [:do-nothing nil]
 
       (= (trim match) (upper-case (str "THE " (name next-section-symbol))))
       [next-section-symbol hexagram]
@@ -124,7 +124,6 @@
                                                                       " ")}))))}
    :judgment {:regex #".*"
               :handler (verse-commentary-handler :judgment :image)}
-
    :image {:regex #".*"
            :handler (verse-commentary-handler :image :lines)}
    :lines {:regex #".*"
@@ -164,5 +163,5 @@
 
 ;; convenience method to output our map of hexgram info to JSON
 (defn emit-json-file []
-  (with-open [wrt (clojure.java.io/writer "resources/i-ching.json" :encoding "UTF-8")]
+  (with-open [wrt (clojure.java.io/writer "resources/hexagrams.json" :encoding "UTF-8")]
     (generate-stream (wilhelm-results) wrt)))

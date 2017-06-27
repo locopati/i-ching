@@ -6,9 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.trace "0.7.9"]
                  [cheshire "5.7.1"]
-                 ;;[ring/ring-core "1.5.0"]
-                 ;;[ring/ring-jetty-adapter "1.5.0"]
                  [compojure "1.6.0" :exclusions [ring/ring-core commons-fileupload]]]
-  :ring {:handler i-ching.web/app
-         :init i-ching.web/init}
-  :main i-ching.core)
+  :profiles {:dev {:dependencies [[ring "1.6.0"]]}}
+  :ring {:handler i-ching.web/app}
+  )

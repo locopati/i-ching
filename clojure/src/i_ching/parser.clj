@@ -79,7 +79,7 @@ section is more complicated because there are six verse/commentaries, one for ea
       (str/includes? match ".html#index")
       [:do-nothing nil]
 
-      (= (str/trim match) (str/upper-case (str "THE " (name next-section-symbol))))
+      (str/starts-with? (str/trim match) (str/upper-case (str "THE " (name next-section-symbol))))
       [next-section-symbol hexagram]
 
       (or
@@ -117,7 +117,7 @@ returns the new state and new hexagram."
                                                     :pinyin
                                                     (last (str/split (CHINESE (Integer. (match 1))) #"[()]"))
                                                     :wade-giles (str/lower-case (match 2))
-                                                    :english-name (match 3)
+                                                    :name {:wilhelm (match 3)}
                                                     :lines []}]
                                                   [:trigram hexagram]))}
    :trigram {:regex #"\s+(?:above|below).*,\s(.*)"

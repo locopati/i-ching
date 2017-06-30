@@ -24,6 +24,14 @@
 ;; test that hexagram-lines are only 6,7,8 or 9
 (expect [6 7 8 9] (distinct-results hexagram-line))
 
+;; test that yarrow-stalk frequencies meet expectations
+(let [iter 10000
+      freq (frequencies (repeatedly iter hexagram-line))]
+  (expect (approximately (/ 1 16) 0.01) (/ (freq 6) iter))
+  (expect (approximately (/ 5 16) 0.01) (/ (freq 7) iter))
+  (expect (approximately (/ 7 16) 0.01) (/ (freq 8) iter))
+  (expect (approximately (/ 3 16) 0.01) (/ (freq 9) iter)))
+
 ;; test that yin-or-yang only has certain possible values
 (expect [0 1] (yin-or-yang 6)) ;; old yin
 (expect [1 1] (yin-or-yang 7)) ;; yang

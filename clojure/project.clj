@@ -8,7 +8,8 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.trace "0.7.9"]
                  [cheshire "5.7.1"]
-                 [compojure "1.6.0" :exclusions [ring/ring-core commons-fileupload]]]
+                 [compojure "1.6.0" :exclusions [ring/ring-core commons-fileupload]]
+                 [hiccup "1.0.5"]]
   :profiles {:dev {:dependencies [[ring "1.6.0"] ;; this is declared here otherwise eval breaks in emacs
                                   [expectations "2.2.0-beta1"]]}}
   :ring {:handler i-ching.web/app}

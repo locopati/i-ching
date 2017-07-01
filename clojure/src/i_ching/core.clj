@@ -56,3 +56,14 @@
   (->> (repeatedly 6 hexagram-line)
        (map yin-or-yang)
        (apply map vector)))
+
+(defn changing-lines
+  "Return the zero-based indexes of the changing lines between a pair of hexagrams"
+  [hexagrams]
+  (->> hexagrams
+       (apply interleave)
+       (partition 2)
+       (map-indexed (fn [idx item] (if (apply distinct? item) idx)))
+       (remove nil?)))
+
+

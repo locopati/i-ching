@@ -42,4 +42,13 @@
 (expect 2 (count (hexagram)))
 (expect 6 (count (first (hexagram))))
 (expect 6 (count (last (hexagram))))
-(expect [0 1] (distinct-results hexagram))
+(expect [0 1] (distinct-results hexagram)) ;; hexagrams only contain 0 or 1
+
+;; test changing-lines
+(expect [] (changing-lines '([1 1 1 1 1 1] [1 1 1 1 1 1]))) ;; no changes
+(expect [0] (changing-lines '([1 1 1 1 1 1] [0 1 1 1 1 1]))) ;; first changes
+(expect [1 3] (changing-lines '([1 0 1 0 1 1] [1 1 1 1 1 1]))) ;; middle changes
+(expect [4 5] (changing-lines '([1 1 1 1 0 1] [1 1 1 1 1 0]))) ;; last changes
+(expect [0 1 2 3 4 5] (changing-lines '([0 0 0 1 1 1] [1 1 1 0 0 0]))) ;; all change
+
+

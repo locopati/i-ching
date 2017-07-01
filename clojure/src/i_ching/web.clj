@@ -44,7 +44,6 @@
    (hexagram-view hexagram nil))
   
   ([hexagram changing-lines]
-   (println (:king-wen-number hexagram) changing-lines)
    [:div.hexagram-container
     [:div.hexagram-header
      [:div.ideogram (:chinese hexagram)]

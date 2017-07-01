@@ -5,7 +5,8 @@
             [compojure.route :as route]
             [compojure.coercions :as coerce]
             [ring.util.response :as response]
-            [hiccup.core :refer :all]))
+            [hiccup.core :refer :all]
+            [hiccup.page :as page]))
 
 (def hexagrams
   "Store the 64 hexagrams info in a local cache as a sequence of maps. 
@@ -45,8 +46,11 @@
   ([hexagram changing-lines]
    (println (:king-wen-number hexagram) changing-lines)
    [:div.hexagram-container
-    [:div.hexagram (:hexagram hexagram)]
-    [:div.chinese [:span.ideogram (:chinese hexagram)] [:span.pinyin (:pinyin hexagram)]]
+    [:div.hexagram-header
+     [:div.ideogram (:chinese hexagram)]
+     [:div.hexagram (:hexagram hexagram)]
+     [:div.pinyin (:pinyin hexagram)]
+     ]
     [:div.name (get-in hexagram [:name :wilhelm])]
     [:div.description
      [:div.heading "description"]
@@ -63,6 +67,7 @@
         [primary-hexagram related-hexagram]
         (map #(hexagram-by :hexagram-binary %) hexagrams)]
     (html
+     (page/include-css "i-ching.css")
      [:div#consult-container
       (hexagram-view primary-hexagram changing-lines)
       (if (seq changing-lines) (hexagram-view related-hexagram))])))

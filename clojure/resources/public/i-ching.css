@@ -1,0 +1,55 @@
+#consult-container {
+    display: flex;
+}
+
+.hexagram-container {
+    padding: 1em;
+    width: 50%;
+}
+
+.hexagram-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hexagram-header div {
+    width: 33%;
+}
+
+.hexagram {
+    font-size: 128;
+    color: coral;
+    text-align: center;
+}
+
+
+.ideogram, .pinyin {
+    font-size: 32;
+    text-align: center;
+}
+
+.name {
+    font-size: 32;
+    font-weight: bold;
+    text-align: center;
+}
+
+.heading {
+    font-size: 16;
+    text-align: center;
+    margin-top: 2em;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.description .heading {
+    margin-bottom: 1em;
+}
+
+.verse {
+    text-align: center;
+    white-space: pre-line;
+    margin: 1em 0em;
+    font-style: italic;
+}

@@ -111,13 +111,13 @@ returns the new state and new hexagram."
                   :handler (fn [match hexagram] (if match ;; this is the initial hexagram map
                                                   [:new-hexagram
                                                    {:king-wen-number (Integer. (match 1))
-                                                    :hexagram (HEXAGRAMS (Integer. (match 1)))
+                                                    :figure (HEXAGRAMS (Integer. (match 1)))
                                                     :chinese
                                                     (first (str/split (CHINESE (Integer. (match 1))) #" "))
                                                     :pinyin
                                                     (last (str/split (CHINESE (Integer. (match 1))) #"[()]"))
                                                     :wade-giles (str/lower-case (match 2))
-                                                    :name {:wilhelm (match 3)}
+                                                    :names [(match 3)]
                                                     :lines []}]
                                                   [:trigram hexagram]))}
    :trigram {:regex #"\s+(?:above|below).*,\s(.*)"

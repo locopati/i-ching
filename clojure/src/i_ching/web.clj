@@ -52,7 +52,7 @@
    [:div.hexagram-container
     [:div.hexagram-header
      [:div.ideogram (:chinese hexagram)]
-     [:div.hexagram (:hexagram hexagram)]
+     [:div.hexagram (:figure hexagram)]
      [:div.pinyin (:pinyin hexagram)]
      ]
     [:div.name (get-in hexagram [:name :wilhelm])]

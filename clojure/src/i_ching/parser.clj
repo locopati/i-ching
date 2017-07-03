@@ -125,11 +125,11 @@ returns the new state and new hexagram."
                                              [:trigram
                                               (merge
                                                hexagram
-                                               {:hexagram-binary
+                                               {:binary
                                                 ;; for trigram lookup it is necessary to trim
                                                 ;; a line may have extra space at the end 
                                                 (into [] (concat (TRIGRAMS (str/trim (match 1)))
-                                                                 (:hexagram-binary hexagram)))})]
+                                                                 (:binary hexagram)))})]
                                              [:description hexagram]))}
    :description {:regex #".*"
                  :handler (fn [match hexagram] (case (str/trim match)

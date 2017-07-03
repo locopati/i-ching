@@ -13,6 +13,11 @@
   We do the loading here rather than in an init function so that it loads everytime this file changes."
   (atom (cheshire/parse-string (slurp "resources/hexagrams.json") true)))
 
+(def trigrams
+  "Store the 8 trigrams info in a local cache as a sequence of maps. 
+  We do the loading here rather than in an init function so that it loads everytime this file changes."
+  (atom (cheshire/parse-string (slurp "resources/trigrams.json") true)))
+
 (defn hexagram-by
   "Get the hexagram (a map) from the cache whose key (a keyword) has val"
   [key val]
@@ -64,7 +69,7 @@
   (let [hexagrams (i-ching/hexagram)
         changing-lines (i-ching/changing-lines hexagrams)
         [primary-hexagram related-hexagram]
-        (map #(hexagram-by :hexagram-binary %) hexagrams)]
+        (map #(hexagram-by :binary %) hexagrams)]
     (html
      (page/include-css "i-ching.css")
      [:div#consult-container

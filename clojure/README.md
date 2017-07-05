@@ -1,14 +1,27 @@
 # i-ching
 
-A Clojure library designed to ... well, that part is up to you.
 
-## Usage
+## To run the server
 
-FIXME
+lein deps
 
-## License
+lein ring server
 
-Copyright © 2017 FIXME
+Currently, hexagram and trigram data are loaded from JSON files in the resources directory. This will be changing to a Neo4j database.
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+---
+## To view an I Ching reading
+
+In your browser, navigate to http://localhost:3000 (which redirects to http://localhost:3000/consult)
+
+---
+
+## To run tests
+
+lein expectations
+
+
+## To run tests automatically while working on them
+
+lein autoexpect
+

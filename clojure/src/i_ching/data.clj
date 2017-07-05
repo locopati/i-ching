@@ -63,7 +63,7 @@
                                 :data {:type name}}})
        trigram-uris))
 
-(defn hexagram-trigram-relationship
+(defn create-hexagram-trigram-relationships
   "Create relationships between hexagrams and trigrams"
   []
   (let [conn (open-connection)
@@ -80,3 +80,10 @@
                                      tri-list))]))
          (map batch-relationship-map)
          (nb/perform conn))))
+
+(defn init-data
+  "Initialize the database with hexagrams, trigrams, and their relationships."
+  []
+  (create-hexagrams)
+  (create-trigrams)
+  (create-hexagram-trigram-relationships))

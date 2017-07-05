@@ -6,8 +6,7 @@ The [I Ching](https://en.wikipedia.org/wiki/I_Ching), or Book of Changes, is an 
 ### About this repository
 This project is a simple system for experimentation with programming languages and frameworks. The core logic, server-side behavior, and testing is implemented in Clojure for now, with other languages to come.
 
-| Language | Build System | Server Frameworks | Front-end Frameworks | Testing Framework |
-|:--------:| :----------: | :---------------: | :------------------: | :---------------: |
-| Clojure  | [leiningen](https://leiningen.org/) | [ring](https://github.com/ring-clojure/ring)<br/>[compojure](https://github.com/weavejester/compojure) | [hiccup](https://github.com/weavejester/hiccup) | [expectations](https://github.com/clojure-expectations/expectations) |
-
+| Language | Build System | Database | Server Frameworks | Front-end Frameworks | Testing Framework |
+|:--------:| :----------: | :------: |:---------------: | :------------------: | :---------------: |
+| Clojure  | [leiningen](https://leiningen.org/) | [neo4j](https://neo4j.com) | [ring](https://github.com/ring-clojure/ring)<br/>[compojure](https://github.com/weavejester/compojure) | [hiccup](https://github.com/weavejester/hiccup) | [expectations](https://github.com/clojure-expectations/expectations) 
 

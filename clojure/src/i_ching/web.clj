@@ -6,7 +6,8 @@
             [compojure.coercions :as coerce]
             [ring.util.response :as response]
             [hiccup.core :refer :all]
-            [hiccup.page :as page]))
+            [hiccup.page :as page]
+            [ring.logger :as log]))
 
 (def hexagrams
   "Store the 64 hexagrams info in a local cache as a sequence of maps. 
@@ -84,3 +85,8 @@
   (GET "/" [] (response/redirect "/consult"))
   (route/resources "/")
   (route/not-found "Page not found"))
+
+(def wrapped-app
+  "Routes wrapped with middleware"
+  (-> app
+      (log/wrap-with-logger)))
